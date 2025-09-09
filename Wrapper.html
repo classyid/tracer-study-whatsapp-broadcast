@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tracer Study Vokasi - Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+    .nav-link.active {
+      background-color: rgba(255,255,255,0.15) !important;
+      border-radius: 0.375rem;
+    }
+    .content-area {
+      min-height: calc(100vh - 200px);
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 1rem 0;
+      margin-top: 2rem;
+      border-top: 1px solid #dee2e6;
+    }
+    .page-transition {
+      opacity: 1;
+      transition: opacity 0.3s ease-in-out;
+    }
+    .page-transition.loading {
+      opacity: 0.5;
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<!-- TOP NAVIGATION -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="javascript:void(0)" onclick="navigateTo('Upload')">
+      <i class="bi bi-mortarboard-fill me-2"></i>
+      Tracer Study Vokasi
+    </a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link px-3 <?= page == 'Upload' ? 'active' : '' ?>" 
+             href="javascript:void(0)" 
+             onclick="navigateTo('Upload')"
+             id="nav-upload">
+            <i class="bi bi-cloud-upload me-1"></i>
+            Upload & Sinkron Data
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link px-3 <?= page == 'Index' ? 'active' : '' ?>" 
+             href="javascript:void(0)" 
+             onclick="navigateTo('Index')"
+             id="nav-broadcast">
+            <i class="bi bi-broadcast me-1"></i>
+            Broadcast WhatsApp
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- BREADCRUMB -->
+<div class="container-fluid bg-white border-bottom">
+  <div class="container">
+    <nav aria-label="breadcrumb" class="py-2">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+          <a href="javascript:void(0)" onclick="navigateTo('Upload')" class="text-decoration-none">
+            <i class="bi bi-house me-1"></i>Home
+          </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page" id="currentPageBreadcrumb">
+          <?= page == 'Upload' ? 'Upload & Sinkron Data' : 'Broadcast WhatsApp' ?>
+        </li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<!-- CONTENT AREA -->
+<div class="container my-4 content-area">
+  <!-- Alert Container -->
+  <div id="alertContainer"></div>
+  
+  <!-- Page Content -->
+  <div id="pageContent" class="page-transition">
+    <?!= include(page) ?>
+  </div>
+  
+  <!-- Loading indicator -->
+  <div id="loadingIndicator" class="text-center py-5" style="display: none;">
+    <div class="loading-spinner"></div>
+    <p class="mt-3 text-muted">
+      <i class="bi bi-arrow-repeat me-2"></i>
+      Memuat halaman...
+    </p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <small class="text-muted">
+          <i class="bi bi-c-circle me-1"></i>
+          2024 Tracer Study Vokasi Management System
+        </small>
+      </div>
+      <div class="col-md-6 text-md-end">
+        <small class="text-muted">
+          <i class="bi bi-geo-alt me-1"></i>
+          Halaman Aktif: <span id="currentPageFooter" class="fw-semibold"><?= page == 'Upload' ? 'Upload & Sinkron Data' : 'Broadcast WhatsApp' ?></span>
+        </small>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Global variables
+let isNavigating = false;
+
+// Global navigation function
+function navigateTo(targetPage) {
+  // Prevent multiple simultaneous navigations
+  if (isNavigating) return;
+  
+  // Validate page
+  const validPages = ['Upload', 'Index'];
+  if (!validPages.includes(targetPage)) {
+    console.error('Invalid page:', targetPage);
+    showAlert('Halaman tidak valid: ' + targetPage, 'danger');
+    return;
+  }
+  
+  isNavigating = true;
+  showLoading(true);
+  
+  // Update URL without reload
+  const newUrl = new URL(window.location);
+  newUrl.searchParams.set('page', targetPage);
+  window.history.pushState({page: targetPage}, '', newUrl);
+  
+  // Load new content via server-side function
+  google.script.run
+    .withSuccessHandler(function(content) {
+      try {
+        document.getElementById('pageContent').innerHTML = content;
+        updateNavigation(targetPage);
+        showLoading(false);
+        
+        // Initialize page-specific functionality
+        setTimeout(() => {
+          initializePage(targetPage);
+          isNavigating = false;
+        }, 100);
+        
+        // Log navigation
+        console.log('Successfully navigated to:', targetPage);
+        
+      } catch (error) {
+        console.error('Error rendering page content:', error);
+        showAlert('Error saat memuat konten halaman', 'danger');
+        isNavigating = false;
+        showLoading(false);
+      }
+    })
+    .withFailureHandler(function(error) {
+      console.error('Failed to load page:', error);
+      
+      const errorHtml = `
+        <div class="alert alert-danger" role="alert">
+          <h5 class="alert-heading">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Gagal Memuat Halaman
+          </h5>
+          <p class="mb-3">Terjadi kesalahan saat memuat halaman "${targetPage}".</p>
+          <p class="mb-0">
+            <strong>Error:</strong> ${error.message || 'Unknown error'}
+          </p>
+          <hr>
+          <div class="mb-0">
+            <button class="btn btn-outline-danger btn-sm me-2" onclick="location.reload()">
+              <i class="bi bi-arrow-clockwise me-1"></i>
+              Refresh Halaman
+            </button>
+            <button class="btn btn-outline-primary btn-sm" onclick="navigateTo('Upload')">
+              <i class="bi bi-house me-1"></i>
+              Kembali ke Home
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('pageContent').innerHTML = errorHtml;
+      isNavigating = false;
+      showLoading(false);
+    })
+    .getPageContent(targetPage);
+}
+
+// Show/hide loading indicator with transition
+function showLoading(show) {
+  const loadingEl = document.getElementById('loadingIndicator');
+  const contentEl = document.getElementById('pageContent');
+  
+  if (show) {
+    contentEl.classList.add('loading');
+    loadingEl.style.display = 'block';
+  } else {
+    contentEl.classList.remove('loading');
+    loadingEl.style.display = 'none';
+  }
+}
+
+// Update navigation active states and breadcrumb
+function updateNavigation(currentPage) {
+  // Remove active class from all nav links
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.classList.remove('active');
+  });
+  
+  // Add active class to current page
+  const navMap = {
+    'Upload': 'nav-upload',
+    'Index': 'nav-broadcast'
+  };
+  
+  const activeNavId = navMap[currentPage];
+  if (activeNavId) {
+    const activeNav = document.getElementById(activeNavId);
+    if (activeNav) {
+      activeNav.classList.add('active');
+    }
+  }
+  
+  // Update breadcrumb and footer
+  const pageTitles = {
+    'Upload': 'Upload & Sinkron Data',
+    'Index': 'Broadcast WhatsApp'
+  };
+  
+  const pageTitle = pageTitles[currentPage] || currentPage;
+  
+  const breadcrumbEl = document.getElementById('currentPageBreadcrumb');
+  const footerEl = document.getElementById('currentPageFooter');
+  
+  if (breadcrumbEl) breadcrumbEl.textContent = pageTitle;
+  if (footerEl) footerEl.textContent = pageTitle;
+  
+  // Update document title
+  document.title = `${pageTitle} - Tracer Study Vokasi`;
+}
+
+// Handle browser back/forward
+window.addEventListener('popstate', function(event) {
+  if (event.state && event.state.page) {
+    navigateTo(event.state.page);
+  } else {
+    // Fallback to Upload page
+    navigateTo('Upload');
+  }
+});
+
+// Initialize page-specific functionality
+function initializePage(page) {
+  console.log('Initializing page:', page);
+  
+  switch(page) {
+    case 'Upload':
+      // Upload page specific initialization
+      console.log('Upload page loaded');
+      // Re-bind any upload-specific event listeners if needed
+      break;
+      
+    case 'Index':
+      // Broadcast page specific initialization
+      console.log('Broadcast page loaded');
+      
+      // Re-initialize page functions that might have been lost
+      setTimeout(() => {
+        try {
+          // Check if functions exist and call them
+          if (typeof window.loadTemplates === 'function') {
+            window.loadTemplates();
+          }
+          if (typeof window.loadData === 'function') {
+            window.loadData();
+          }
+          
+          // Re-initialize any event listeners for the broadcast page
+          initializeBroadcastPage();
+          
+        } catch (error) {
+          console.warn('Error initializing broadcast page:', error);
+        }
+      }, 200);
+      break;
+  }
+}
+
+// Helper function for broadcast page initialization
+function initializeBroadcastPage() {
+  // This will be called after Index.html content is loaded
+  // Add any additional broadcast-specific initialization here
+  
+  // Example: Re-attach event listeners that might have been lost
+  const pageSize = document.getElementById('pagesize');
+  if (pageSize && !pageSize.onchange) {
+    pageSize.onchange = function() {
+      if (typeof window.updatePageSize === 'function') {
+        window.updatePageSize(parseInt(this.value));
+      }
+    };
+  }
+}
+
+// Initial page load
+document.addEventListener('DOMContentLoaded', function() {
+  const currentPage = '<?= page ?>';
+  console.log('Initial page load:', currentPage);
+  
+  // Set initial navigation state
+  updateNavigation(currentPage);
+  
+  // Initialize current page
+  setTimeout(() => {
+    initializePage(currentPage);
+  }, 100);
+  
+  // Set initial history state
+  const initialUrl = new URL(window.location);
+  initialUrl.searchParams.set('page', currentPage);
+  window.history.replaceState({page: currentPage}, '', initialUrl);
+});
+
+// Utility function for showing alerts
+function showAlert(message, type = 'info', autoHide = true) {
+  const alertContainer = document.getElementById('alertContainer');
+  const alertId = 'alert-' + Date.now();
+  
+  const alertDiv = document.createElement('div');
+  alertDiv.id = alertId;
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+  alertDiv.setAttribute('role', 'alert');
+  
+  const iconMap = {
+    'success': 'bi-check-circle',
+    'danger': 'bi-exclamation-triangle',
+    'warning': 'bi-exclamation-circle',
+    'info': 'bi-info-circle'
+  };
+  
+  const icon = iconMap[type] || iconMap['info'];
+  
+  alertDiv.innerHTML = `
+    <i class="${icon} me-2"></i>
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  `;
+  
+  alertContainer.appendChild(alertDiv);
+  
+  // Auto remove after 5 seconds if autoHide is true
+  if (autoHide) {
+    setTimeout(() => {
+      const alertEl = document.getElementById(alertId);
+      if (alertEl && alertEl.parentNode) {
+        const bsAlert = new bootstrap.Alert(alertEl);
+        bsAlert.close();
+      }
+    }, 5000);
+  }
+  
+  return alertId;
+}
+
+// Global error handler
+window.addEventListener('error', function(event) {
+  console.error('Global error:', event.error);
+  showAlert('Terjadi kesalahan pada aplikasi. Silakan refresh halaman jika masalah berlanjut.', 'danger');
+});
+
+// Network error handler
+window.addEventListener('online', function() {
+  showAlert('Koneksi internet tersedia kembali', 'success');
+});
+
+window.addEventListener('offline', function() {
+  showAlert('Koneksi internet terputus. Beberapa fitur mungkin tidak berfungsi.', 'warning', false);
+});
+
+// Expose global functions for child pages
+window.showAlert = showAlert;
+window.navigateTo = navigateTo;
+
+console.log('Wrapper.html loaded successfully');
+</script>
+
+</body>
+</html>
