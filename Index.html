@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Broadcast WhatsApp - Tracer Study</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+    }
+    
+    .navbar {
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .page-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    .page-header h4 {
+      margin: 0;
+      font-weight: 600;
+    }
+    
+    .page-header p {
+      margin: 0.5rem 0 0 0;
+      opacity: 0.9;
+    }
+    
+    table { 
+      border-collapse: collapse; 
+      width: 100%; 
+    }
+    
+    th, td { 
+      border: 1px solid #ddd; 
+      padding: 8px; 
+      vertical-align: middle;
+    }
+    
+    th { 
+      text-align: center; 
+      background-color: #f8f9fa; 
+      font-weight: 600; 
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    td { 
+      vertical-align: middle; 
+    }
+    
+    .small-note { 
+      font-size: 0.85rem; 
+      color: #6c757d; 
+    }
+
+    /* Status WhatsApp color coding */
+    select.wa-kirim    { background-color: #fff3cd !important; color: #856404 !important; }
+    select.wa-terkirim { background-color: #d1e7dd !important; color: #0f5132 !important; }
+    select.wa-stop     { background-color: #f8d7da !important; color: #721c24 !important; }
+    select.wa-gagal    { background-color: #e2e3e5 !important; color: #383d41 !important; }
+
+    /* Card styling */
+    .control-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 1.5rem;
+    }
+    
+    .table-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .btn-action {
+      border-radius: 6px;
+      font-weight: 500;
+      padding: 8px 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .pagination-controls {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-top: 1px solid #dee2e6;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+    
+    .status-indicator.processing { background-color: #ffc107; }
+    .status-indicator.success { background-color: #198754; }
+    .status-indicator.error { background-color: #dc3545; }
+    
+    @media (max-width: 768px) {
+      .table-responsive {
+        font-size: 0.875rem;
+      }
+      
+      th, td {
+        padding: 6px;
+      }
+    }
+    
+    .breadcrumb {
+      background: rgba(255,255,255,0.8);
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="javascript:void(0)" onclick="navigateToPage('Upload')">
+      <i class="bi bi-mortarboard-fill me-2"></i>
+      Tracer Study Vokasi
+    </a>
+    
+    <div class="navbar-nav ms-auto">
+      <a class="nav-link text-light" href="javascript:void(0)" onclick="navigateToPage('Upload')">
+        <i class="bi bi-cloud-upload me-1"></i>
+        Upload & Sinkron Data
+      </a>
+      <a class="nav-link text-light active" href="javascript:void(0)" onclick="navigateToPage('Index')">
+        <i class="bi bi-broadcast me-1"></i>
+        Broadcast WhatsApp
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="container mt-3">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="javascript:void(0)" onclick="navigateToPage('Upload')" class="text-decoration-none">
+          <i class="bi bi-house me-1"></i>Home
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">Broadcast WhatsApp</li>
+    </ol>
+  </nav>
+</div>
+
+<div class="container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h4><i class="bi bi-broadcast me-2"></i>Broadcast Pesan WhatsApp Tracer Study</h4>
+    <p>Kelola dan kirim pesan broadcast WhatsApp kepada alumni</p>
+  </div>
+
+  <!-- Controls Section -->
+  <div class="control-card">
+    <div class="card-body p-4">
+      <div class="row g-3">
+        <!-- Template Section -->
+        <div class="col-lg-8">
+          <label class="form-label fw-bold text-primary">
+            <i class="bi bi-file-text me-1"></i>
+            Template Broadcast Pesan
+          </label>
+          <textarea id="templateText" class="form-control" rows="6"
+            placeholder="Ketik teks broadcast pesan baru atau pilih dari template yang tersedia..."></textarea>
+          <div class="form-text small-note">
+            <i class="bi bi-info-circle me-1"></i>
+            Gunakan <strong>TAG</strong> seperti <strong>&lt;NAMA&gt;</strong>, <strong>&lt;NISN&gt;</strong>, <strong>&lt;SALAM&gt;</strong> yang akan diganti otomatis sesuai data.
+          </div>
+        </div>
+
+        <!-- Action Section -->
+        <div class="col-lg-4">
+          <label class="form-label fw-bold text-primary">
+            <i class="bi bi-tools me-1"></i>
+            Pilih Template & Aksi
+          </label>
+          <select id="templateSelect" class="form-select mb-3 border-primary">
+            <option value="" disabled selected>Memuat template...</option>
+          </select>
+
+          <div class="d-grid gap-2">
+            <button id="btnSaveTemplate" class="btn btn-outline-primary btn-action">
+              <i class="bi bi-save me-1"></i>
+              Simpan Template
+            </button>
+            <button id="btnIsiNoWA" class="btn btn-outline-info btn-action">
+              <i class="bi bi-telephone me-1"></i>
+              Isi Nomor WA Kosong
+            </button>
+            <button id="btnBroadcast" class="btn btn-danger btn-action">
+              <i class="bi bi-send-fill me-1"></i>
+              Broadcast Sekarang
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="col-12">
+          <hr class="my-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label fw-bold text-success">
+                <i class="bi bi-funnel me-1"></i>
+                SET Status WhatsApp
+              </label>
+              <select id="setStatusWA" class="form-select border-success">
+                <option value="" selected disabled>-- Pilih Status WhatsApp --</option>
+                <option value="KIRIM WA">KIRIM WA</option>
+                <option value="TERKIRIM">TERKIRIM</option>
+                <option value="STOP">STOP</option>
+                <option value="GAGAL KIRIM">GAGAL KIRIM</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-bold text-success">
+                <i class="bi bi-filter me-1"></i>
+                FILTER Status Pengisian
+              </label>
+              <select id="setFilterStatusPengisian" class="form-select border-success">
+                <option value="" selected disabled>-- Filter Status Pengisian --</option>
+                <option value="Selesai Mengisi">Selesai Mengisi</option>
+                <option value="Sedang Mengisi . . .">Sedang Mengisi . . .</option>
+                <option value="Belum Mengisi">Belum Mengisi</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-bold text-info">
+                <i class="bi bi-gear me-1"></i>
+                Page Size
+              </label>
+              <select id="pagesize" class="form-select border-info">
+                <option value="30" selected>30 baris</option>
+                <option value="10">10 baris</option>
+                <option value="50">50 baris</option>
+                <option value="100">100 baris</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Table Section -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="table table-striped table-hover mb-0" id="dataTable">
+        <thead class="table-dark">
+          <tr>
+            <th colspan="8" class="text-center">Memuat data...</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-controls">
+      <div class="d-flex justify-content-between align-items-center">
+        <button class="btn btn-outline-primary btn-sm" onclick="changePage(-1)" id="btnPrev" disabled>
+          <i class="bi bi-chevron-left me-1"></i>Prev
+        </button>
+        
+        <div class="d-flex align-items-center">
+          <span id="pageInfo" class="me-3">Page 1 of 1</span>
+          <div id="statusGlobal" class="badge bg-secondary"></div>
+        </div>
+        
+        <button class="btn btn-outline-primary btn-sm" onclick="changePage(1)" id="btnNext" disabled>
+          Next<i class="bi bi-chevron-right ms-1"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Global variables
+let currentPage = 1;
+let pageSize = 30;
+let templatesList = [];
+let totalPages = 1;
+let isProcessing = false;
+
+// SOLUSI CLIENT-SIDE - Ganti function navigateToPage di Upload.html dan Index.html
+
+function navigateToPage(page) {
+  console.log('Starting navigation to:', page);
+  
+  // Show loading overlay
+  showNavigationLoading(page);
+  
+  // Get current Web App URL from server
+  google.script.run
+    .withSuccessHandler(function(webAppUrl) {
+      console.log('Got Web App URL from server:', webAppUrl);
+      
+      if (webAppUrl) {
+        // Use server-provided URL
+        const targetUrl = webAppUrl + '?page=' + page;
+        console.log('Navigating to:', targetUrl);
+        window.location.href = targetUrl;
+      } else {
+        // Fallback: try to construct URL from current location
+        handleNavigationFallback(page);
+      }
+    })
+    .withFailureHandler(function(error) {
+      console.error('Failed to get Web App URL:', error);
+      handleNavigationFallback(page);
+    })
+    .getCurrentWebAppUrl();
+}
+
+function showNavigationLoading(page) {
+  const pageNames = {
+    'Upload': 'Upload & Sinkron Data',
+    'Index': 'Broadcast WhatsApp'
+  };
+  
+  const pageName = pageNames[page] || page;
+  
+  // Remove existing loading if any
+  const existingLoading = document.getElementById('navigationLoading');
+  if (existingLoading) {
+    existingLoading.remove();
+  }
+  
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'navigationLoading';
+  loadingDiv.innerHTML = `
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); color: white; 
+                display: flex; align-items: center; justify-content: center; 
+                z-index: 9999; font-family: Arial;">
+      <div style="text-align: center;">
+        <div style="font-size: 18px; margin-bottom: 10px;">
+          Membuka halaman ${pageName}...
+        </div>
+        <div style="width: 40px; height: 40px; border: 4px solid #fff; 
+                    border-top: 4px solid transparent; border-radius: 50%; 
+                    animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
+          Mendapatkan URL aplikasi...
+        </div>
+      </div>
+    </div>
+    <style>
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+  `;
+  
+  document.body.appendChild(loadingDiv);
+}
+
+function handleNavigationFallback(page) {
+  console.log('Using navigation fallback for page:', page);
+  
+  const pageNames = {
+    'Upload': 'Upload & Sinkron Data',
+    'Index': 'Broadcast WhatsApp'
+  };
+  
+  const pageName = pageNames[page] || page;
+  
+  // Remove loading
+  const loadingDiv = document.getElementById('navigationLoading');
+  if (loadingDiv) {
+    loadingDiv.remove();
+  }
+  
+  // Try different URL construction methods
+  let targetUrl = null;
+  
+  // Method 1: Check if current URL is valid production URL
+  const currentUrl = window.location.href;
+  if (currentUrl.includes('script.google.com/macros') && currentUrl.includes('/exec')) {
+    const baseUrl = currentUrl.split('?')[0]; // Remove query parameters
+    targetUrl = baseUrl + '?page=' + page;
+  }
+  
+  // Method 2: Check referrer
+  if (!targetUrl && document.referrer && document.referrer.includes('script.google.com/macros')) {
+    const referrerUrl = new URL(document.referrer);
+    targetUrl = referrerUrl.origin + referrerUrl.pathname + '?page=' + page;
+  }
+  
+  if (targetUrl) {
+    console.log('Fallback navigation to:', targetUrl);
+    window.location.href = targetUrl;
+  } else {
+    // Last resort: show manual navigation
+    showManualNavigation(page, pageName);
+  }
+}
+
+function showManualNavigation(page, pageName) {
+  const modalDiv = document.createElement('div');
+  modalDiv.innerHTML = `
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); color: white; 
+                display: flex; align-items: center; justify-content: center; 
+                z-index: 9999; font-family: Arial;">
+      <div style="background: white; color: black; padding: 20px; border-radius: 10px; 
+                  max-width: 500px; text-align: center;">
+        <h3>Navigasi Manual</h3>
+        <p>Tidak dapat navigasi otomatis ke halaman ${pageName}.</p>
+        <p>Silakan reload halaman dengan parameter:</p>
+        <div style="background: #f5f5f5; padding: 10px; margin: 10px 0; 
+                    border-radius: 5px; font-family: monospace;">
+          ?page=${page}
+        </div>
+        <button onclick="window.location.reload()" 
+                style="background: #007bff; color: white; border: none; 
+                       padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px;">
+          Reload Halaman
+        </button>
+        <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                style="background: #6c757d; color: white; border: none; 
+                       padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px;">
+          Tutup
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modalDiv);
+}
+
+
+/* ======= Initialize Page ======= */
+function initializePage() {
+  console.log('Initializing broadcast page...');
+  
+  setupEventListeners();
+  loadTemplates();
+  loadData();
+  
+  // Expose functions globally
+  window.loadTemplates = loadTemplates;
+  window.loadData = loadData;
+  window.changePage = changePage;
+  
+  console.log('Broadcast page initialized successfully');
+}
+
+function setupEventListeners() {
+  // Page size change
+  document.getElementById('pagesize').onchange = function() {
+    pageSize = parseInt(this.value);
+    currentPage = 1;
+    loadData();
+  };
+
+  // Template save
+  document.getElementById('btnSaveTemplate').onclick = function() {
+    const text = document.getElementById('templateText').value;
+    if (!text.trim()) {
+      alert('Template tidak boleh kosong');
+      return;
+    }
+    
+    google.script.run
+      .withSuccessHandler(() => {
+        alert('Template berhasil disimpan');
+      })
+      .withFailureHandler((error) => {
+        alert('Gagal menyimpan template: ' + error.message);
+      })
+      .saveContainerText(text);
+  };
+
+  // Fill empty WhatsApp numbers
+  document.getElementById('btnIsiNoWA').onclick = function() {
+    if (isProcessing) return;
+    
+    setProcessing(true);
+    showStatus('Mengisi nomor WhatsApp kosong...');
+    
+    google.script.run
+      .withSuccessHandler(() => {
+        alert('Nomor WhatsApp kosong berhasil diisi');
+        setProcessing(false);
+        loadData();
+      })
+      .withFailureHandler((error) => {
+        alert('Gagal mengisi nomor WA: ' + error.message);
+        setProcessing(false);
+      })
+      .isiNoWhatsAppAlumni_trigger();
+  };
+
+  // Broadcast button
+  document.getElementById('btnBroadcast').onclick = handleBroadcast;
+
+  // Status filters
+  document.getElementById('setStatusWA').onchange = handleStatusChange;
+  document.getElementById('setFilterStatusPengisian').onchange = handleFilterChange;
+}
+
+/* ======= Templates Management ======= */
+function loadTemplates() {
+  console.log('Loading templates...');
+  
+  google.script.run
+    .withSuccessHandler(function(list) {
+      console.log('Templates loaded:', list);
+      templatesList = list || [];
+      const sel = document.getElementById('templateSelect');
+      sel.innerHTML = '';
+      
+      const defaultOpt = document.createElement('option');
+      defaultOpt.value = '';
+      defaultOpt.textContent = 'Pilih template yang akan digunakan...';
+      defaultOpt.disabled = true;
+      defaultOpt.selected = true;
+      sel.appendChild(defaultOpt);
+
+      list.forEach((t, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = t.label;
+        sel.appendChild(opt);
+      });
+
+      sel.onchange = function() {
+        const idx = this.value;
+        if (idx === '' || idx === undefined) return;
+        
+        const selectedText = templatesList[parseInt(idx)].value || '';
+        document.getElementById('templateText').value = selectedText;
+        
+        // Save to container
+        google.script.run.copyTemplateToContainer(parseInt(idx));
+      };
+    })
+    .withFailureHandler((error) => {
+      console.error('Failed to load templates:', error);
+      alert('Gagal memuat template: ' + error.message);
+    })
+    .getTemplates();
+}
+
+/* ======= Data Management ======= */
+function loadData() {
+  console.log('Loading data...');
+  showStatus('Memuat data...');
+  
+  google.script.run
+    .withSuccessHandler(renderTable)
+    .withFailureHandler((error) => {
+      console.error('Failed to load data:', error);
+      alert('Gagal memuat data: ' + error.message);
+      showStatus('');
+    })
+    .getBroadcastData(currentPage, pageSize);
+}
+
+function renderTable(result) {
+  console.log('Rendering table with data:', result);
+  
+  const { headers, rows, total } = result;
+  const thead = document.querySelector('#dataTable thead');
+  const tbody = document.querySelector('#dataTable tbody');
+
+  // Render header
+  thead.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+
+  // Render body
+  tbody.innerHTML = '';
+  
+  if (rows.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="${headers.length}" class="text-center py-4 text-muted">
+          <i class="bi bi-inbox me-2"></i>
+          Tidak ada data untuk ditampilkan
+        </td>
+      </tr>
+    `;
+  } else {
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-row', r.sheetRow);
+
+      r.values.forEach((c, j) => {
+        const td = document.createElement('td');
+        const headerName = headers[j];
+
+        if (headerName === 'Status WhatsApp') {
+          const select = document.createElement('select');
+          select.className = 'form-select form-select-sm status-col';
+          select.setAttribute('data-row', r.sheetRow);
+
+          ['KIRIM WA', 'TERKIRIM', 'STOP', 'GAGAL KIRIM'].forEach(optText => {
+            const opt = document.createElement('option');
+            opt.value = optText;
+            opt.textContent = optText;
+            if ((c || '') === optText) opt.selected = true;
+            select.appendChild(opt);
+          });
+
+          applyStatusColor(select);
+
+          select.onchange = function() {
+            const statusWA = this.value;
+            const rowId = r.sheetRow;
+            applyStatusColor(this);
+            
+            // Update server
+            google.script.run
+              .withFailureHandler((error) => {
+                alert('Gagal update status: ' + error.message);
+              })
+              .updateBroadcastCell(rowId, 2, statusWA);
+          };
+
+          td.appendChild(select);
+        } else {
+          td.textContent = c ?? '';
+        }
+
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Update pagination
+  totalPages = total ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  updatePaginationInfo(total);
+  showStatus('');
+}
+
+/* ======= Broadcast Functions ======= */
+async function handleBroadcast() {
+  if (isProcessing) return;
+  
+  const rows = Array.from(document.querySelectorAll('#dataTable tbody tr[data-row]'));
+  const kirimWACount = rows.filter(tr => {
+    const select = tr.querySelector('select.status-col');
+    return select && select.value === 'KIRIM WA';
+  }).length;
+  
+  if (kirimWACount === 0) {
+    alert('Tidak ada data dengan status "KIRIM WA" untuk di-broadcast');
+    return;
+  }
+  
+  if (!confirm(`Yakin akan mengirim broadcast ke ${kirimWACount} penerima dengan status "KIRIM WA"?`)) {
+    return;
+  }
+
+  setProcessing(true);
+  showStatus('Memproses broadcast...');
+
+  let processed = 0;
+  const total = kirimWACount;
+
+  for (const tr of rows) {
+    const rowId = parseInt(tr.getAttribute('data-row'), 10);
+    if (!rowId) continue;
+
+    const select = tr.querySelector('select.status-col');
+    if (!select || select.value !== 'KIRIM WA') continue;
+
+    try {
+      const result = await new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .processBroadcast(rowId);
+      });
+
+      // Update UI
+      if (select) {
+        select.value = result.newStatus;
+        applyStatusColor(select);
+      }
+
+      processed++;
+      showStatus(`Broadcast: ${processed}/${total} selesai`);
+      
+      // Small delay for UI updates
+      await new Promise(r => setTimeout(r, 100));
+      
+    } catch (error) {
+      console.error('Broadcast error for row', rowId, ':', error);
+    }
+  }
+
+  setProcessing(false);
+  showStatus('');
+  alert(`Broadcast selesai! Diproses: ${processed}/${total}`);
+}
+
+/* ======= Event Handlers ======= */
+function handleStatusChange() {
+  const statusWA = this.value;
+  if (!statusWA) return;
+
+  if (confirm(`Yakin mengubah semua status di halaman ini menjadi "${statusWA}"?`)) {
+    const rows = document.querySelectorAll('#dataTable tbody tr[data-row]');
+    rows.forEach(tr => {
+      const select = tr.querySelector('select.status-col');
+      if (select) {
+        select.value = statusWA;
+        applyStatusColor(select);
+        
+        const rowId = parseInt(tr.getAttribute('data-row'), 10);
+        google.script.run.updateBroadcastCell(rowId, 2, statusWA);
+      }
+    });
+    
+    alert(`Status berhasil diubah menjadi "${statusWA}"`);
+  }
+  
+  // Reset dropdown
+  this.value = '';
+}
+
+function handleFilterChange() {
+  const filterStatus = this.value;
+  if (!filterStatus) return;
+
+  if (confirm(`Gunakan "${filterStatus}" sebagai filter broadcast?`)) {
+    google.script.run
+      .withSuccessHandler(() => {
+        alert(`Filter "${filterStatus}" berhasil disimpan`);
+      })
+      .withFailureHandler((error) => {
+        alert('Gagal menyimpan filter: ' + error.message);
+      })
+      .saveFilterStatus(filterStatus);
+  }
+  
+  // Reset dropdown  
+  this.value = '';
+}
+
+/* ======= Utility Functions ======= */
+function applyStatusColor(selectEl) {
+  if (!selectEl || selectEl.tagName !== 'SELECT') return;
+  
+  selectEl.classList.remove('wa-kirim', 'wa-terkirim', 'wa-stop', 'wa-gagal');
+  const value = (selectEl.value || '').toString().trim();
+  
+  if (value === 'KIRIM WA') selectEl.classList.add('wa-kirim');
+  else if (value === 'TERKIRIM') selectEl.classList.add('wa-terkirim');
+  else if (value === 'STOP') selectEl.classList.add('wa-stop');
+  else if (value === 'GAGAL KIRIM') selectEl.classList.add('wa-gagal');
+}
+
+function changePage(delta) {
+  const newPage = currentPage + delta;
+  if (newPage < 1 || newPage > totalPages) return;
+  
+  currentPage = newPage;
+  loadData();
+}
+
+function updatePaginationInfo(total) {
+  document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} (${total} total)`;
+  
+  // Update button states
+  document.getElementById('btnPrev').disabled = currentPage <= 1;
+  document.getElementById('btnNext').disabled = currentPage >= totalPages;
+}
+
+function setProcessing(processing) {
+  isProcessing = processing;
+  
+  const buttons = ['btnBroadcast', 'btnIsiNoWA'];
+  buttons.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.disabled = processing;
+    }
+  });
+}
+
+function showStatus(message) {
+  const statusEl = document.getElementById('statusGlobal');
+  if (statusEl) {
+    if (message) {
+      statusEl.textContent = message;
+      statusEl.className = 'badge bg-info';
+    } else {
+      statusEl.textContent = '';
+      statusEl.className = 'badge bg-secondary';
+    }
+  }
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', initializePage);
+
+// Fallback initialization
+setTimeout(initializePage, 1000);
+
+console.log('Index.html script loaded');
+</script>
+
+</body>
+</html>
